@@ -1,0 +1,17 @@
+# Environnement virtuel
+venv/
+env/
+.venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de données (si vous ne voulez pas versionner les données)
+instance/
+*.db
+
+# Fichiers de configuration personnels
+.env
+config.local.py
