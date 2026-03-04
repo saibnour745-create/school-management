@@ -36,15 +36,16 @@ matplotlib-inline==0.1.7
 mccabe==0.7.0
 msgspec==0.20.0
 mypy_extensions==1.1.0
-numpy @ file:///home/builder/.termux-build/python-numpy/src/dist/numpy-2.2.5-cp312-cp312-linux_aarch64.whl#sha256=9acc5910463e929fa8cce9e7737b3bab22c136033e72385658050177498d4467
-opencv-contrib-python @ file:///home/builder/.termux-build/python-opencv-python/src
-opencv-python @ file:///home/builder/.termux-build/python-opencv-python/src
+numpy==2.2.5
+opencv-contrib-python==4.13.0.92
+opencv-python==4.13.0.92
 packaging==25.0
 pandas==3.0.1
 parso==0.8.5
 pathspec==0.12.1
 pexpect==4.9.0
-pillow @ file:///home/builder/.termux-build/python-pillow/src
+pillow==12.1.1
+pip==26.0.1
 platformdirs==4.5.0
 pluggy==1.6.0
 prompt_toolkit==3.0.52
