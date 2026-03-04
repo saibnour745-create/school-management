@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions Mobile Money{% endblock %}
+
+{% block content %}
+<h1>Historique des transactions Mobile Money</h1>
+
+<a href="{{ url_for('mobile_payment') }}" class="btn btn-success" style="margin-bottom: 1rem;">
+    + Nouveau paiement mobile
+</a>
+
+{% if transactions %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Transaction</th>
+            <th>Élève</th>
+            <th>Téléphone</th>
+            <th>Opérateur</th>
+            <th>Montant</th>
+            <th>Statut</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transactions %}
+        <tr>
+            <td>{{ t.id }}</td>
+            <td>
+                <small>{{ t.transaction_id }}</small><br>
+                <small style="color: #666;">{{ t.reference }}</small>
+            </td>
+            <td>
+                {% if t.student %}
+                    {{ t.student.first_name }} {{ t.student.last_name }}
+                {% else %}
+                    Élève #{{ t.student_id }}
+                {% endif %}
+            </td>
+            <td>{{ t.phone_number }}</td>
+            <td>
+                {% if t.operator == 'airtel' %}📱 Airtel
+                {% elif t.operator == 'orange' %}📱 Orange
+                {% elif t.operator == 'wave' %}🌊 Wave
+                {% elif t.operator == 'free' %}📱 Free
+                {% elif t.operator == 'moov' %}📱 Moov
+                {% else %}{{ t.operator }}{% endif %}
+            </td>
+            <td>{{ t.amount }} FCFA</td>
+            <td>
+                {% if t.status == 'success' %}
+                    <span style="background-color: #27ae60; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">✅ Succès</span>
+                {% elif t.status == 'pending' %}
+                    <span style="background-color: #f39c12; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">⏳ En attente</span>
+                {% else %}
+                    <span style="background-color: #e74c3c; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">❌ Échec</span>
+                {% endif %}
+            </td>
+            <td>{{ t.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="card">
+    <p>Aucune transaction mobile pour le moment.</p>
+    <a href="{{ url_for('mobile_payment') }}" class="btn btn-success">Faire un paiement mobile</a>
+</div>
+{% endif %}
+{% endblock %}

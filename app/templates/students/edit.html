@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier un Élève{% endblock %}
+
+{% block content %}
+<h1>Modifier l'élève : {{ student.first_name }} {{ student.last_name }}</h1>
+
+<div class="card" style="max-width: 600px;">
+    <form method="POST">
+        <div class="form-group">
+            <label for="first_name">Prénom :</label>
+            <input type="text" id="first_name" name="first_name" value="{{ student.first_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Nom :</label>
+            <input type="text" id="last_name" name="last_name" value="{{ student.last_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="class_name">Classe :</label>
+            <select id="class_name" name="class_name" required>
+                <option value="">Sélectionnez une classe</option>
+                <option value="6ème" {% if student.class_name == '6ème' %}selected{% endif %}>6ème</option>
+                <option value="5ème" {% if student.class_name == '5ème' %}selected{% endif %}>5ème</option>
+                <option value="4ème" {% if student.class_name == '4ème' %}selected{% endif %}>4ème</option>
+                <option value="3ème" {% if student.class_name == '3ème' %}selected{% endif %}>3ème</option>
+                <option value="Seconde" {% if student.class_name == 'Seconde' %}selected{% endif %}>Seconde</option>
+                <option value="Première" {% if student.class_name == 'Première' %}selected{% endif %}>Première</option>
+                <option value="Terminale" {% if student.class_name == 'Terminale' %}selected{% endif %}>Terminale</option>
+            </select>
+        </div>
+        
+        <!-- Téléphone parent -->
+        <div class="form-group">
+            <label for="parent_phone">Téléphone parent :</label>
+            <div style="display: flex;">
+                <span style="background-color: #2c3e50; color: white; padding: 0.5rem; border-radius: 4px 0 0 4px; font-weight: bold;">+227</span>
+                <input type="tel" id="parent_phone" name="parent_phone" 
+                       value="{% if student.parent_phone %}{{ student.parent_phone[-8:] }}{% endif %}"
+                       placeholder="XX XX XX XX" 
+                       pattern="[0-9]{8}" 
+                       maxlength="8"
+                       title="Entrez les 8 chiffres du numéro (ex: 71 23 45 67)"
+                       style="flex: 1; border-radius: 0 4px 4px 0; padding: 0.5rem; border: 1px solid #ddd;"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <small style="color: #666;">Format: +227 suivi de 8 chiffres (ex: 71 23 45 67)</small>
+        </div>
+        
+        <!-- Frais d'inscription -->
+        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">💰 Frais d'inscription</h3>
+            
+            <div class="form-group">
+                <label for="registration_fee">Montant des frais d'inscription (FCFA) :</label>
+                <input type="number" id="registration_fee" name="registration_fee" 
+                       min="0" step="1000" value="{{ student.registration_fee }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="registration_payment_method">Mode de paiement :</label>
+                <select id="registration_payment_method" name="registration_payment_method" required>
+                    <option value="pending" {% if student.registration_payment_method == 'pending' %}selected{% endif %}>💰 À payer plus tard</option>
+                    <option value="cash" {% if student.registration_payment_method == 'cash' %}selected{% endif %}>💵 Espèces (payé)</option>
+                    <option value="mobile" {% if student.registration_payment_method == 'mobile' %}selected{% endif %}>📱 Mobile Money (payé)</option>
+                </select>
+            </div>
+            
+            {% if student.registration_date %}
+                <p><small>Payé le: {{ student.registration_date.strftime('%d/%m/%Y') }}</small></p>
+            {% endif %}
+        </div>
+        
+        <!-- Critères d'inscription -->
+        <div style="background-color: #f0f8ff; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">📋 Critères d'inscription</h3>
+            
+            <div class="form-group">
+                <label for="nationalite">Nationalité :</label>
+                <input type="text" id="nationalite" name="nationalite" value="{{ student.nationalite or '' }}" placeholder="Ex: Nigérienne">
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: center;">
+                <input type="checkbox" id="extrait_naissance" name="extrait_naissance" value="1" 
+                       style="width: auto; margin-right: 0.5rem;"
+                       {% if student.extrait_naissance %}checked{% endif %}>
+                <label for="extrait_naissance" style="display: inline; margin-bottom: 0;">Extrait de naissance fourni</label>
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: center;">
+                <input type="checkbox" id="bulletins_fournis" name="bulletins_fournis" value="1" 
+                       style="width: auto; margin-right: 0.5rem;"
+                       {% if student.bulletins_fournis %}checked{% endif %}>
+                <label for="bulletins_fournis" style="display: inline; margin-bottom: 0;">Deux bulletins fournis</label>
+            </div>
+        </div>
+        
+        <!-- Carte scolaire -->
+        <div style="background-color: #fff3e0; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">🆔 Carte Scolaire</h3>
+            
+            <div class="form-group" style="display: flex; align-items: center;">
+                <input type="checkbox" id="carte_valide" name="carte_valide" value="1" 
+                       style="width: auto; margin-right: 0.5rem;"
+                       {% if student.carte_valide %}checked{% endif %}>
+                <label for="carte_valide" style="display: inline; margin-bottom: 0;">Activer la carte scolaire</label>
+            </div>
+            
+            {% if student.carte_valide %}
+                <p><small>Numéro actuel : <strong>{{ student.carte_numero }}</strong></small></p>
+                <p><small>Émise le : {{ student.carte_date_emission.strftime('%d/%m/%Y') if student.carte_date_emission else 'Non disponible' }}</small></p>
+            {% endif %}
+            
+            <small style="color: #666;">Si vous activez la carte, un numéro unique sera généré automatiquement (ou conservé s'il existe déjà).</small>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+        <a href="{{ url_for('students_list') }}" style="margin-left: 1rem;">Annuler</a>
+    </form>
+    
+    <!-- Bouton de suppression -->
+    {% set paiements = student.payments|length %}
+    {% if paiements == 0 %}
+    <hr style="margin: 2rem 0;">
+    <div style="text-align: center;">
+        <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" 
+              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer {{ student.first_name }} {{ student.last_name }} ? Cette action est irréversible.')">
+            <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement cet élève</button>
+        </form>
+    </div>
+    {% else %}
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+        <p style="color: #666;">⚠️ Cet élève a {{ paiements }} paiement(s). Impossible de le supprimer.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

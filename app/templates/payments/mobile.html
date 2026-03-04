@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Paiement Mobile{% endblock %}
+
+{% block content %}
+<h1>Paiement par Mobile Money</h1>
+
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <img src="https://via.placeholder.com/100x100?text=Mobile+Money" alt="Mobile Money" style="width: 100px; height: 100px;">
+        <h2>Simulation de paiement</h2>
+        <p style="color: #666;">Choisissez votre opérateur</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('process_mobile_payment') }}">
+        <div class="form-group">
+    <label for="student_id">Élève :</label>
+    <select id="student_id" name="student_id" required>
+        <option value="">Sélectionnez un élève</option>
+        {% for data in students_data %}
+            {% if data.complete %}
+                <option value="{{ data.student.id }}" disabled style="color: #27ae60;">
+                    ✅ {{ data.student.first_name }} {{ data.student.last_name }} - {{ data.student.class_name }} (Complet)
+                </option>
+            {% else %}
+                <option value="{{ data.student.id }}">
+                    {{ data.student.first_name }} {{ data.student.last_name }} - {{ data.student.class_name }} (Reste: {{ data.reste }} FCFA)
+                </option>
+            {% endif %}
+        {% endfor %}
+    </select>
+</div>
+
+        <div class="form-group">
+            <label for="operator">Opérateur :</label>
+            <select id="operator" name="operator" required style="padding: 0.5rem; font-size: 1rem;">
+                <option value="">Choisissez...</option>
+                <option value="airtel">📱 Airtel Money</option>
+                <option value="orange">📱 Orange Money</option>
+                <option value="wave">🌊 Wave</option>
+                <option value="free">📱 Free Money</option>
+                <option value="moov">📱 Moov Money</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="phone_number">Numéro de téléphone :</label>
+            <div style="display: flex;">
+                <span style="background-color: #2c3e50; color: white; padding: 0.5rem; border-radius: 4px 0 0 4px; font-weight: bold;">+227</span>
+                <input type="tel" id="phone_number" name="phone_number" required 
+                       placeholder="XX XX XX XX" 
+                       pattern="[0-9]{8}" 
+                       maxlength="8"
+                       title="Entrez les 8 chiffres de votre numéro (ex: 71 23 45 67)"
+                       style="flex: 1; border-radius: 0 4px 4px 0; padding: 0.5rem; border: 1px solid #ddd;"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <small style="color: #666;">Format: +227 suivi de 8 chiffres (ex: 71 23 45 67)</small>
+            <small style="color: #27ae60; display: block;">✅ L'indicatif +227 sera ajouté automatiquement</small>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Montant (FCFA) :</label>
+            <input type="number" id="amount" name="amount" required 
+                   min="100" step="100" placeholder="Ex: 5000">
+        </div>
+
+        <div class="form-group">
+            <label for="month">Mois concerné :</label>
+            <select id="month" name="month" required>
+                <option value="">Sélectionnez un mois</option>
+                <option value="Janvier">Janvier</option>
+                <option value="Février">Février</option>
+                <option value="Mars">Mars</option>
+                <option value="Avril">Avril</option>
+                <option value="Mai">Mai</option>
+                <option value="Juin">Juin</option>
+                <option value="Juillet">Juillet</option>
+                <option value="Août">Août</option>
+                <option value="Septembre">Septembre</option>
+                <option value="Octobre">Octobre</option>
+                <option value="Novembre">Novembre</option>
+                <option value="Décembre">Décembre</option>
+            </select>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+            <h3 style="margin-bottom: 0.5rem;">📋 Simulation :</h3>
+            <p>Après avoir cliqué sur "Payer", vous allez :</p>
+            <ol style="margin-left: 1.5rem;">
+                <li>Recevoir une demande de confirmation sur votre téléphone (simulé)</li>
+                <li>Entrer votre code PIN (simulé)</li>
+                <li>Recevoir un reçu de paiement</li>
+            </ol>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+            💰 Payer par Mobile Money
+        </button>
+    </form>
+
+    <div style="margin-top: 1rem; text-align: center;">
+        <a href="{{ url_for('payments_list') }}">← Retour à la liste des paiements</a>
+    </div>
+</div>
+
+<style>
+    .operator-option {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+    }
+    .operator-option img {
+        width: 30px;
+        height: 30px;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}

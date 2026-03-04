@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmation de Paiement{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
+    {% if success %}
+    <div style="font-size: 5rem; color: #27ae60; margin-bottom: 1rem;">✅</div>
+    <h1 style="color: #27ae60;">Paiement Réussi !</h1>
+    
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin: 1rem 0; text-align: left;">
+        <h3 style="margin-bottom: 1rem;">Détails du paiement :</h3>
+        
+        <p><strong>Transaction ID:</strong> {{ transaction.transaction_id }}</p>
+        <p><strong>Référence:</strong> {{ transaction.reference }}</p>
+        <p><strong>Élève:</strong> {{ student.first_name }} {{ student.last_name }}</p>
+        <p><strong>Classe:</strong> {{ student.class_name }}</p>
+        <p><strong>Montant:</strong> {{ transaction.amount }} FCFA</p>
+        <p><strong>Téléphone:</strong> {{ transaction.phone_number }}</p>
+        <p><strong>Opérateur:</strong> 
+            {% if transaction.operator == 'airtel' %}📱 Airtel Money
+            {% elif transaction.operator == 'orange' %}📱 Orange Money
+            {% elif transaction.operator == 'wave' %}🌊 Wave
+            {% elif transaction.operator == 'free' %}📱 Free Money
+            {% elif transaction.operator == 'moov' %}📱 Moov Money
+            {% else %}{{ transaction.operator }}{% endif %}
+        </p>
+        <p><strong>Mois:</strong> {{ month }}</p>
+        <p><strong>Date:</strong> {{ transaction.completed_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+    </div>
+    
+    <div style="background-color: #e8f5e9; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <p style="color: #2e7d32;">📱 Un message de confirmation a été envoyé au <strong>{{ transaction.phone_number }}</strong></p>
+    </div>
+    
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+        <a href="{{ url_for('payments_list') }}" class="btn">Voir tous les paiements</a>
+        <a href="{{ url_for('mobile_payment') }}" class="btn btn-success">Nouveau paiement</a>
+    </div>
+    
+    {% else %}
+    <div style="font-size: 5rem; color: #e74c3c; margin-bottom: 1rem;">❌</div>
+    <h1 style="color: #e74c3c;">Paiement Échoué</h1>
+    
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin: 1rem 0; text-align: left;">
+        <p style="color: #e74c3c;"><strong>Erreur :</strong> {{ error }}</p>
+        <p>Causes possibles :</p>
+        <ul style="margin-left: 1.5rem;">
+            <li>Solde insuffisant</li>
+            <li>Code PIN incorrect</li>
+            <li>Problème de réseau</li>
+            <li>Transaction annulée</li>
+        </ul>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('mobile_payment') }}" class="btn btn-success" style="margin-right: 1rem;">Réessayer</a>
+        <a href="{{ url_for('payments_list') }}" class="btn">Annuler</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background-color: #229954;
+    }
+</style>
+{% endblock %}

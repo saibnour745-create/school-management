@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<h1>Bienvenue sur le système de gestion scolaire</h1>
+<p>Ce système vous permet de gérer les élèves et les paiements.</p>
+
+<div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+    <div style="background-color: white; padding: 1rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2>Élèves</h2>
+        <p>Gérez la liste des élèves, ajoutez, modifiez ou supprimez des inscriptions.</p>
+        <a href="{{ url_for('students_list') }}" class="btn">Voir les élèves</a>
+    </div>
+    
+    <div style="background-color: white; padding: 1rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2>Paiements</h2>
+        <p>Enregistrez les paiements des frais de scolarité et suivez les statuts.</p>
+        <a href="{{ url_for('payments_list') }}" class="btn">Voir les paiements</a>
+    </div>
+    
+    <div style="background-color: white; padding: 1rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2>Tableau de bord</h2>
+        <p>Consultez les statistiques et résumés de l'établissement.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn">Voir le tableau de bord</a>
+    </div>
+</div>
+{% endblock %}

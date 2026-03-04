@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<h1>Tableau de Bord</h1>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem;">
+    <div style="background-color: white; padding: 1.5rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+        <h2 style="color: #2c3e50; font-size: 2rem;">{{ total_students }}</h2>
+        <p>Total Élèves</p>
+    </div>
+    
+    <div style="background-color: white; padding: 1.5rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+        <h2 style="color: #2c3e50; font-size: 2rem;">{{ total_payments }}</h2>
+        <p>Total Paiements</p>
+    </div>
+</div>
+
+<div style="margin-top: 2rem;">
+    <h2>Actions rapides</h2>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <a href="{{ url_for('add_student') }}" class="btn">Ajouter un élève</a>
+        <a href="{{ url_for('add_payment') }}" class="btn">Enregistrer un paiement</a>
+    </div>
+</div>
+{% endblock %}

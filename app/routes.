@@ -1,0 +1,337 @@
+from flask import render_template, request, redirect, url_for, flash, send_file
+from app import app, db
+from app.models import Student, Payment, MobilePayment, CashRegister
+from app.pdf_generator import generate_payment_receipt
+import random
+import string
+from datetime import datetime
+
+# ============================================
+# ROUTES PRINCIPALES
+# ============================================
+
+@app.route('/')
+def accueil():
+    return render_template('index.html')
+
+@app.route('/dashboard')
+def dashboard():
+    total_students = Student.query.count()
+    total_payments = Payment.query.count()
+    total_mobile_transactions = MobilePayment.query.count()
+    total_cash = CashRegister.query.count()
+    
+    # Calculs pour la caisse
+    entries = CashRegister.query.all()
+    total_income = sum(e.amount for e in entries if e.transaction_type == 'income')
+    total_expense = sum(e.amount for e in entries if e.transaction_type == 'expense')
+    balance = total_income - total_expense
+    
+    return render_template('dashboard.html', 
+                         total_students=total_students,
+                         total_payments=total_payments,
+                         total_mobile_transactions=total_mobile_transactions,
+                         total_cash=total_cash,
+                         total_income=total_income,
+                         total_expense=total_expense,
+                         balance=balance)
+
+# ============================================
+# ROUTES POUR LES ÉLÈVES
+# ============================================
+
+@app.route('/students')
+def students_list():
+    students = Student.query.all()
+    return render_template('students/list.html', students=students)
+
+@app.route('/students/add', methods=['GET', 'POST'])
+def add_student():
+    if request.method == 'POST':
+        try:
+            # Créer l'élève
+            student = Student(
+                first_name=request.form.get('first_name'),
+                last_name=request.form.get('last_name'),
+                class_name=request.form.get('class_name'),
+                parent_phone=request.form.get('parent_phone'),
+                registration_fee=float(request.form.get('registration_fee', 0)),
+                registration_paid=(request.form.get('registration_payment_method') != 'pending'),
+                registration_payment_method=request.form.get('registration_payment_method')
+            )
+            
+            # Si payé maintenant, enregistrer la date
+            if student.registration_paid:
+                student.registration_date = datetime.utcnow()
+            
+            db.session.add(student)
+            db.session.flush()  # Pour obtenir l'ID de l'élève
+            
+            # ENREGISTRER DANS LA CAISSE si payé maintenant
+            if student.registration_paid:
+                cash_entry = CashRegister(
+                    transaction_type='income',
+                    category='registration',
+                    amount=student.registration_fee,
+                    description=f"Frais d'inscription - {student.first_name} {student.last_name}",
+                    student_id=student.id,
+                    payment_method='cash' if student.registration_payment_method == 'cash' else 'mobile',
+                    reference=f"REG-{student.id}-{datetime.now().strftime('%Y%m')}",
+                    created_by='admin'
+                )
+                db.session.add(cash_entry)
+            
+            db.session.commit()
+            flash(f'✅ Élève {student.first_name} {student.last_name} ajouté avec succès !', 'success')
+            
+            # Message supplémentaire pour les frais
+            if student.registration_paid:
+                flash(f'💰 Frais d\'inscription de {student.registration_fee} FCFA enregistrés', 'success')
+            else:
+                flash(f'⚠️ N\'oubliez pas de payer les frais d\'inscription de {student.registration_fee} FCFA', 'info')
+            
+            return redirect(url_for('students_list'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Erreur: {str(e)}', 'error')
+            return redirect(url_for('add_student'))
+    
+    return render_template('students/add.html')
+
+# ============================================
+# ROUTES POUR LES PAIEMENTS NORMAUX
+# ============================================
+
+@app.route('/payments')
+def payments_list():
+    payments = Payment.query.all()
+    return render_template('payments/list.html', payments=payments)
+
+@app.route('/payments/add', methods=['GET', 'POST'])
+def add_payment():
+    if request.method == 'POST':
+        try:
+            payment = Payment(
+                student_id=request.form.get('student_id'),
+                amount=float(request.form.get('amount')),
+                month=request.form.get('month'),
+                status=request.form.get('status', 'paid')
+            )
+            db.session.add(payment)
+            db.session.flush()
+            
+            # Enregistrer dans la caisse
+            cash_entry = CashRegister(
+                transaction_type='income',
+                category='tuition',
+                amount=payment.amount,
+                description=f"Paiement scolarité - {payment.month}",
+                student_id=payment.student_id,
+                payment_id=payment.id,
+                payment_method='cash',
+                reference=f"PAY-{payment.id}-{datetime.now().strftime('%Y%m')}",
+                created_by='admin'
+            )
+            db.session.add(cash_entry)
+            db.session.commit()
+            
+            flash('✅ Paiement enregistré avec succès !', 'success')
+            return redirect(url_for('payments_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Erreur : {str(e)}', 'error')
+            return redirect(url_for('add_payment'))
+    
+    students = Student.query.all()
+    return render_template('payments/add.html', students=students)
+
+# ============================================
+# ROUTES POUR LES PAIEMENTS MOBILE
+# ============================================
+
+@app.route('/payments/mobile')
+def mobile_payment():
+    students = Student.query.all()
+    return render_template('payments/mobile.html', students=students)
+
+@app.route('/process-mobile-payment', methods=['POST'])
+def process_mobile_payment():
+    try:
+        # Récupérer les données du formulaire
+        student_id = request.form.get('student_id')
+        operator = request.form.get('operator')
+        phone_number = request.form.get('phone_number')
+        
+        # Nettoyer et formater le numéro
+        phone_number = ''.join(filter(str.isdigit, phone_number))
+        if len(phone_number) != 8:
+            flash('❌ Le numéro doit contenir exactement 8 chiffres', 'error')
+            return redirect(url_for('mobile_payment'))
+        
+        full_phone = f"+227 {phone_number[:2]} {phone_number[2:4]} {phone_number[4:6]} {phone_number[6:8]}"
+        
+        amount = float(request.form.get('amount'))
+        month = request.form.get('month')
+        
+        # Générer un ID de transaction unique
+        transaction_id = 'TXN' + ''.join(random.choices(string.digits, k=10))
+        reference = 'REF' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        
+        # Simuler la transaction mobile
+        flash(f'📱 Demande de paiement envoyée au {full_phone}', 'info')
+        
+        # Simuler la confirmation (80% de succès)
+        success = random.choices([True, False], weights=[80, 20])[0]
+        
+        if success:
+            # Créer d'abord le paiement normal
+            payment = Payment(
+                student_id=student_id,
+                amount=amount,
+                month=month,
+                status='paid'
+            )
+            db.session.add(payment)
+            db.session.flush()
+            
+            # Créer la transaction mobile
+            mobile_transaction = MobilePayment(
+                student_id=student_id,
+                payment_id=payment.id,
+                phone_number=full_phone,
+                operator=operator,
+                amount=amount,
+                transaction_id=transaction_id,
+                reference=reference,
+                status='success',
+                completed_at=datetime.utcnow()
+            )
+            db.session.add(mobile_transaction)
+            db.session.flush()
+            
+            # Enregistrer dans la caisse
+            cash_entry = CashRegister(
+                transaction_type='income',
+                category='tuition',
+                amount=amount,
+                description=f"Paiement mobile - {month}",
+                student_id=student_id,
+                payment_id=payment.id,
+                mobile_payment_id=mobile_transaction.id,
+                payment_method='mobile',
+                reference=reference,
+                created_by='system'
+            )
+            db.session.add(cash_entry)
+            db.session.commit()
+            
+            flash('✅ Paiement mobile réussi !', 'success')
+            
+            student = Student.query.get(student_id)
+            return render_template('payments/confirm.html', 
+                                 success=True, 
+                                 transaction=mobile_transaction,
+                                 student=student,
+                                 month=month)
+        else:
+            # Transaction échouée
+            mobile_transaction = MobilePayment(
+                student_id=student_id,
+                phone_number=full_phone,
+                operator=operator,
+                amount=amount,
+                transaction_id=transaction_id,
+                reference=reference,
+                status='failed'
+            )
+            db.session.add(mobile_transaction)
+            db.session.commit()
+            
+            error_msg = "Échec de la transaction. Veuillez réessayer."
+            return render_template('payments/confirm.html', 
+                                 success=False, 
+                                 error=error_msg)
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Erreur: {str(e)}', 'error')
+        return redirect(url_for('mobile_payment'))
+
+@app.route('/mobile-transactions')
+def mobile_transactions():
+    transactions = MobilePayment.query.order_by(MobilePayment.created_at.desc()).all()
+    return render_template('payments/transactions.html', transactions=transactions)
+
+# ============================================
+# ROUTES POUR LA CAISSE
+# ============================================
+
+@app.route('/cash-register')
+def cash_register():
+    entries = CashRegister.query.order_by(CashRegister.created_at.desc()).all()
+    
+    total_income = sum(e.amount for e in entries if e.transaction_type == 'income')
+    total_expense = sum(e.amount for e in entries if e.transaction_type == 'expense')
+    balance = total_income - total_expense
+    
+    return render_template('cash_register.html', 
+                         entries=entries,
+                         total_income=total_income,
+                         total_expense=total_expense,
+                         balance=balance)
+
+@app.route('/add-expense', methods=['GET', 'POST'])
+def add_expense():
+    if request.method == 'POST':
+        try:
+            expense = CashRegister(
+                transaction_type='expense',
+                category=request.form.get('category'),
+                amount=float(request.form.get('amount')),
+                description=request.form.get('description'),
+                payment_method=request.form.get('payment_method'),
+                reference=request.form.get('reference', f"EXP-{datetime.now().strftime('%Y%m%d%H%M')}"),
+                created_by='admin'
+            )
+            db.session.add(expense)
+            db.session.commit()
+            flash('✅ Dépense enregistrée', 'success')
+            return redirect(url_for('cash_register'))
+        except Exception as e:
+            flash(f'❌ Erreur: {str(e)}', 'error')
+    
+    return render_template('add_expense.html')
+
+# ============================================
+# ROUTES POUR LES REÇUS PDF
+# ============================================
+
+@app.route('/receipt/<int:payment_id>')
+def download_receipt(payment_id):
+    try:
+        # Récupérer le paiement
+        payment = Payment.query.get_or_404(payment_id)
+        student = Student.query.get(payment.student_id)
+        
+        # Chercher s'il y a une transaction mobile associée
+        mobile_payment = MobilePayment.query.filter_by(payment_id=payment_id).first()
+        
+        # Générer le PDF
+        pdf_buffer = generate_payment_receipt(payment, student, mobile_payment)
+        
+        # Nom du fichier
+        filename = f"recu_paiement_{student.first_name}_{student.last_name}_{payment.month}.pdf"
+        filename = filename.replace(' ', '_')
+        
+        # Envoyer le fichier
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        flash(f'❌ Erreur lors de la génération du PDF: {str(e)}', 'error')
+        return redirect(url_for('payments_list'))

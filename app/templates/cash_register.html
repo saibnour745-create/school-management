@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Caisse{% endblock %}
+
+{% block content %}
+<h1>Gestion de la Caisse</h1>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+    <div class="card" style="text-align: center;">
+        <h3 style="color: #27ae60;">💰 Total Entrées</h3>
+        <p style="font-size: 2rem; font-weight: bold;">{{ total_income }} FCFA</p>
+    </div>
+    <div class="card" style="text-align: center;">
+        <h3 style="color: #e74c3c;">📤 Total Sorties</h3>
+        <p style="font-size: 2rem; font-weight: bold;">{{ total_expense }} FCFA</p>
+    </div>
+    <div class="card" style="text-align: center;">
+        <h3 style="color: #2c3e50;">⚖️ Solde</h3>
+        <p style="font-size: 2rem; font-weight: bold;">{{ balance }} FCFA</p>
+    </div>
+</div>
+
+<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <a href="{{ url_for('add_expense') }}" class="btn btn-danger">➕ Enregistrer une sortie</a>
+    <a href="{{ url_for('students_list') }}" class="btn btn-success">💰 Voir les inscriptions</a>
+    <a href="{{ url_for('dashboard') }}" class="btn">📊 Tableau de bord</a>
+</div>
+
+<h2>Historique des transactions</h2>
+
+{% if entries %}
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Catégorie</th>
+            <th>Description</th>
+            <th>Montant</th>
+            <th>Méthode</th>
+            <th>Référence</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in entries %}
+        <tr>
+            <td>{{ entry.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>
+                {% if entry.transaction_type == 'income' %}
+                    <span style="color: #27ae60; font-weight: bold;">✅ Entrée</span>
+                {% else %}
+                    <span style="color: #e74c3c; font-weight: bold;">❌ Sortie</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if entry.category == 'registration' %}
+                    📝 Inscription
+                {% elif entry.category == 'tuition' %}
+                    📚 Scolarité
+                {% elif entry.category == 'other' %}
+                    🏫 Autre
+                {% else %}
+                    {{ entry.category }}
+                {% endif %}
+            </td>
+            <td>{{ entry.description }}</td>
+            <td><strong>{{ "{:,.0f}".format(entry.amount) }} FCFA</strong></td>
+            <td>
+                {% if entry.payment_method == 'cash' %}
+                    💵 Espèces
+                {% elif entry.payment_method == 'mobile' %}
+                    📱 Mobile Money
+                {% else %}
+                    🏦 Banque
+                {% endif %}
+            </td>
+            <td><small style="font-family: monospace;">{{ entry.reference }}</small></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr style="background-color: #f2f2f2; font-weight: bold;">
+            <td colspan="4" style="text-align: right;">Totaux:</td>
+            <td>{{ "{:,.0f}".format(total_income) }} FCFA</td>
+            <td colspan="2"></td>
+        </tr>
+    </tfoot>
+</table>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🏦</div>
+    <p style="font-size: 1.3rem; margin-bottom: 1rem; color: #666;">Aucune transaction enregistrée</p>
+    <p style="margin-bottom: 2rem;">La caisse est vide pour le moment.</p>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+        <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; width: 250px;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+            <h3>1. Inscription</h3>
+            <p>Ajoutez un élève avec frais d'inscription payés</p>
+            <a href="{{ url_for('add_student') }}" class="btn btn-success">Ajouter un élève</a>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; width: 250px;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">💵</div>
+            <h3>2. Paiement espèces</h3>
+            <p>Enregistrez un paiement de scolarité en espèces</p>
+            <a href="{{ url_for('add_payment') }}" class="btn btn-success">Paiement espèces</a>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; width: 250px;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+            <h3>3. Paiement mobile</h3>
+            <p>Faites un paiement par Mobile Money</p>
+            <a href="{{ url_for('mobile_payment') }}" class="btn btn-success">Paiement mobile</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        color: white;
+    }
+    
+    .btn-success {
+        background-color: #27ae60;
+    }
+    
+    .btn-success:hover {
+        background-color: #229954;
+    }
+    
+    .btn-danger {
+        background-color: #e74c3c;
+    }
+    
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+    
+    .card {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    th, td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    th {
+        background-color: #2c3e50;
+        color: white;
+    }
+    
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    tfoot td {
+        background-color: #f2f2f2;
+        border-top: 2px solid #ddd;
+    }
+</style>
+{% endblock %}

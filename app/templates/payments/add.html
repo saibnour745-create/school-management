@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Enregistrer un Paiement{% endblock %}
+
+{% block content %}
+<h1>Enregistrer un nouveau paiement</h1>
+
+<div class="card" style="max-width: 500px;">
+    <form method="POST">
+        <div class="form-group">
+            <label for="student_id">Élève :</label>
+            <select id="student_id" name="student_id" required>
+                <option value="">-- Choisissez un élève --</option>
+                {% for data in students_data %}
+                    {% if data.complete %}
+                        <option value="{{ data.student.id }}" disabled style="color: #27ae60; background-color: #f0fff0;">
+                            ✅ {{ data.student.first_name }} {{ data.student.last_name }} - {{ data.student.class_name }} (Scolarité complète)
+                        </option>
+                    {% else %}
+                        <option value="{{ data.student.id }}">
+                            {{ data.student.first_name }} {{ data.student.last_name }} - {{ data.student.class_name }} (Reste: {{ data.reste }} FCFA)
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            {% if students_data|length == 0 %}
+                <p style="color: red;">Aucun élève trouvé. Veuillez d'abord <a href="{{ url_for('add_student') }}">ajouter un élève</a>.</p>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">Montant (FCFA) :</label>
+            <input type="number" id="amount" name="amount" min="100" step="100" required placeholder="Ex: 25000">
+        </div>
+        
+        <div class="form-group">
+            <label for="month">Mois concerné :</label>
+            <select id="month" name="month" required>
+                <option value="">Sélectionnez un mois</option>
+                <option value="Janvier">Janvier</option>
+                <option value="Février">Février</option>
+                <option value="Mars">Mars</option>
+                <option value="Avril">Avril</option>
+                <option value="Mai">Mai</option>
+                <option value="Juin">Juin</option>
+                <option value="Juillet">Juillet</option>
+                <option value="Août">Août</option>
+                <option value="Septembre">Septembre</option>
+                <option value="Octobre">Octobre</option>
+                <option value="Novembre">Novembre</option>
+                <option value="Décembre">Décembre</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Enregistrer le paiement</button>
+        <a href="{{ url_for('payments_list') }}" style="margin-left: 1rem;">Annuler</a>
+    </form>
+</div>
+{% endblock %}
